@@ -1,0 +1,79 @@
+package:
+  name: netcat-openbsd
+  version: 1.130
+  epoch: 0
+  description: "The TCP/IP swiss army knife. OpenBSD variant."
+  target-architecture:
+    - all
+  copyright:
+    - paths:
+      - "*"
+      attestation: TODO
+      license: BSD-3-Clause
+      
+environment:
+  contents:
+    repositories:
+      - https://packages.wolfi.dev/os
+    keyring:
+      - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    packages:
+      - wolfi-base
+      - busybox
+      - ca-certificates-bundle
+      - build-base
+      - automake
+      - libbsd-dev
+      - libmd-dev
+
+pipeline:
+  - uses: fetch
+    with:
+      uri: http://ftp.debian.org/debian/pool/main/n/netcat-openbsd/netcat-openbsd_${{package.version}}.orig.tar.gz
+      expected-sha256: fd7205065d0b47898851f31f33e614de5d47a5b9dc81fd50d2ff51b63d091e5b
+  - uses: patch
+    with:
+      patches: 0001-port-to-linux-with-libsd.patch
+  - uses: patch
+    with:
+      patches: 0002-connect-timeout.patch
+  - uses: patch
+    with:
+      patches: 0003-get-sev-by-name.patch
+  - uses: patch
+    with:
+      patches: 0004-send-crlf.patch
+  - uses: patch
+    with:
+      patches: 0005-quit-timer.patch
+  - uses: patch
+    with:
+      patches: 0006-udp-scan-timeout.patch
+  - uses: patch
+    with:
+      patches: 0007-verbose-numeric-port.patch
+  - uses: patch
+    with:
+      patches: 0008-dccp-support.patch
+  - uses: patch
+    with:
+      patches: 0009-serialized-handling-multiple-clients.patch
+  - uses: patch
+    with:
+      patches: 0010-misc-failures-and-features.patch
+  - runs: |
+      sed -i Makefile -e "/SRCS=/s;\(.*\);& base64.c;"
+  - runs: |
+      make CFLAGS="$CFLAGS -DDEBIAN_VERSION=\"\\\"${{package.version}}\\\"\""
+      install -d "${{targets.destdir}}"/usr/bin/
+      install -d "${{targets.destdir}}"/usr/share/man/man1/
+      install nc "${{targets.destdir}}"/usr/bin/nc
+      install nc.1 "${{targets.destdir}}"/usr/share/man/man1/nc.openbsd.1
+  - uses: strip
+
+subpackages:
+  - name: "netcat-openbsd-doc"
+    description: "documentation for netcat-openbsd"
+    pipeline:
+      - uses: split/manpages
+      - uses: split/infodir
