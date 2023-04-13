@@ -47,6 +47,9 @@ pipeline:
       for i in kc.sh kcadm.sh kcreg.sh; do
         ln -sf /usr/share/java/keycloak-${{package.version}}/bin/$i ${{targets.destdir}}/usr/bin/$i
       done
+      
+      # symlink /usr/share/java/keycloak => /usr/share/java/keycloak-<version>
+      ln -sf /usr/share/java/keycloak-${{package.version}} ${{targets.destdir}}/usr/share/java/keycloak
 
 update:
   enabled: true
